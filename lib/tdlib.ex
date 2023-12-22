@@ -1,28 +1,30 @@
 defmodule TDLib do
-  alias TDLib.{Session, Object}
-  alias TDLib.SessionRegistry, as: Registry
-
-  @default_config %Object.TdlibParameters{
-    :use_test_dc              => false,
-    :database_directory       => "/tmp/tdlib",
-    :files_directory          => "", # When empty database_directory will be used
-    :use_file_database        => true,
-    :use_chat_info_database   => true,
-    :use_message_database     => true,
-    :use_secret_chats         => false,
-    :api_id                   => "0",
-    :api_hash                 => "0",
-    :system_language_code     => "en",
-    :device_model             => "Unknown",
-    :system_version           => "Unknown",
-    :application_version      => "Unknown",
-    :enable_storage_optimizer => true,
-    :ignore_file_names        => true
-  }
-
   @moduledoc """
   This module allow you to interact with and manage sessions.
   """
+
+  alias TDLib.Method
+  alias TDLib.Session
+  alias TDLib.Session.Registry
+
+  @default_config %Method.SetTdlibParameters{
+    database_encryption_key: nil,
+    use_test_dc: false,
+    database_directory: "/tmp/tdlib",
+    files_directory: "",
+    use_file_database: true,
+    use_chat_info_database: true,
+    use_message_database: true,
+    use_secret_chats: false,
+    api_id: "0",
+    api_hash: "0",
+    system_language_code: "en",
+    device_model: "Unknown",
+    system_version: "Unknown",
+    application_version: "Unknown",
+    enable_storage_optimizer: true,
+    ignore_file_names: true
+  }
 
   @doc """
   Configuration template for TDLib, to be modified and used as parameter of
@@ -37,7 +39,7 @@ defmodule TDLib do
   Be careful not to use the same `:database_directory` for two different
   sessions !
   """
-  def default_config(), do: @default_config
+  def default_config, do: @default_config
 
   @doc """
   Open a new session. Spawns a new instance of `tdlib-json-cli`.
@@ -80,7 +82,7 @@ defmodule TDLib do
 
   def transmit(session_name, json) when is_binary(json) do
     backend_pid = Registry.get(session_name, :backend_pid)
-    GenServer.call backend_pid, {:transmit, json}
+    GenServer.call(backend_pid, {:transmit, json})
   end
 
   @doc """
@@ -92,15 +94,24 @@ defmodule TDLib do
   """
   def update_client(session_name, client_pid) do
     handler_pid = Registry.get(session_name, :handler_pid)
-    GenServer.call handler_pid, {:set_client, client_pid}
+    GenServer.call(handler_pid, {:set_client, client_pid})
   end
 
   @doc false
-  def get_backend_binary() do
+  def get_backend_binary do
     config = Application.get_env(:tdlib, :backend_binary)
+
     case config do
-      nil -> Mix.Project.build_path() |> Path.join("/lib/tdlib_json_cli/bin/tdlib_json_cli")
+      nil -> Path.join(Mix.Project.build_path(), "/lib/tdlib_json_cli/bin/tdlib_json_cli")
       _ -> config
     end
+  end
+
+  @doc """
+  Converts the first letter of a string to uppercase, while leaving the rest of the string unchanged.
+  """
+  def titlecase_once(str) do
+    first_letter = String.first(str)
+    String.replace_prefix(str, first_letter, String.upcase(first_letter))
   end
 end

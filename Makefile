@@ -20,7 +20,6 @@ build:
 ifeq ($(shell uname),Darwin)
 	cd $(BUILD_ROOT); \
 	cmake -DCMAKE_BUILD_TYPE=Release \
-    -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl \
     $(TDLIBJSONCLI_SRC) ; \
 	make -j$(JOBS) VERBOSE=$(VERBOSE)
 else

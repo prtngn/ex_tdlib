@@ -1,5 +1,11 @@
 # Changelog for elixir-tdlib
 
+## v0.0.4 (2023-12-XX)
+
+* tdlib-json-cli from nightly repo is now used
+* update dependencies
+* remove warnings
+
 ## v0.0.3 (2019-09-13)
 
 * Update tdlib-json-cli from v1.1.1 to v1.1.2

@@ -1,13 +1,14 @@
 defmodule TDLib.Handler do
-  alias TDLib.{Object, Method}
-  alias TDLib.SessionRegistry, as: Registry
-  require Logger
+  @moduledoc false
   use GenServer
 
+  alias TDLib.Object
+  alias TDLib.Session.Registry
+
+  require Logger
+
   # Must be a multiple of 4
-  @moduledoc false
   @backend_verbosity_level 2
-  @disable_handling Application.get_env(:telegram_tdlib, :disable_handling)
 
   def start_link(session_name) do
     GenServer.start_link(__MODULE__, session_name, [])
@@ -26,9 +27,9 @@ defmodule TDLib.Handler do
     keys = Map.keys(json)
 
     cond do
-      "@cli" in keys -> json |> handle_cli(session)
-      "@type" in keys -> json |> handle_object(session)
-      true -> Logger.warn "#{session}: unknown structure received"
+      "@cli" in keys -> handle_cli(json, session)
+      "@type" in keys -> handle_object(json, session)
+      true -> Logger.warning("#{session}: unknown structure received")
     end
 
     {:noreply, session}
@@ -40,7 +41,7 @@ defmodule TDLib.Handler do
     cli = Map.get(json, "@cli")
     event = Map.get(cli, "event")
 
-    Logger.debug "#{session}: received cli event #{event}"
+    Logger.debug("#{session}: received cli event #{event}")
 
     case event do
       "client_created" -> set_backend_verbosity(@backend_verbosity_level, session)
@@ -50,38 +51,40 @@ defmodule TDLib.Handler do
 
   def handle_object(json, session) do
     type = Map.get(json, "@type")
-    struct = try do
-      recursive_match(:object, json, "Elixir.TDLib.Object.")
-    rescue
-      _ -> nil
-    end
+
+    struct =
+      try do
+        recursive_match(:object, json, "Elixir.TDLib.Object.")
+      rescue
+        _ -> nil
+      end
 
     if struct do
-      Logger.debug "#{session}: received object #{type}"
+      Logger.debug("#{session}: received object #{type}")
 
-      unless @disable_handling do
+      unless disable_handling() do
         case struct do
           %Object.Error{code: code, message: message} ->
-            Logger.error "#{session}: error #{code} - #{message}"
+            Logger.error("#{session}: error #{code} - #{message}")
+
           %Object.UpdateAuthorizationState{} ->
             case struct.authorization_state do
               %Object.AuthorizationStateWaitTdlibParameters{} ->
-                config = Registry.get(session) |> Map.get(:config)
-                transmit session, %Method.SetTdlibParameters{
-                  :parameters  => config
-                }
-              %Object.AuthorizationStateWaitEncryptionKey{} ->
-                transmit session, %Method.CheckDatabaseEncryptionKey{
-                  encryption_key: Registry.get(session, :encryption_key)
-                }
-              _ -> :ignore
+                config = session |> Registry.get() |> Map.get(:config)
+                transmit(session, config)
+
+              _ ->
+                :ignore
             end
-          _ -> :ignore
+
+          _ ->
+            :ignore
         end
       end
 
       # Forward to client
-      client_pid = Registry.get(session) |> Map.get(:client_pid)
+      client_pid = session |> Registry.get() |> Map.get(:client_pid)
+
       if is_pid(client_pid) and Process.alive?(client_pid) do
         Kernel.send(client_pid, {:recv, struct})
       end
@@ -96,17 +99,17 @@ defmodule TDLib.Handler do
     msg = Poison.encode!(map)
     backend_pid = Registry.get(session, :backend_pid)
 
-    Logger.debug "#{session}: sending #{Map.get(map, :"@type")}"
-    GenServer.call backend_pid, {:transmit, msg}
+    Logger.debug("#{session}: sending #{Map.get(map, :"@type")}")
+    GenServer.call(backend_pid, {:transmit, msg})
   end
 
   defp set_backend_verbosity(level, session) do
     # Set tdlib's verbosity level
     backend_pid = Registry.get(session, :backend_pid)
     command = "verbose #{level}"
-    GenServer.call backend_pid, {:transmit, command}
+    GenServer.call(backend_pid, {:transmit, command})
 
-    Logger.debug "#{session}: backend verbosity set to #{level}."
+    Logger.debug("#{session}: backend verbosity set to #{level}.")
   end
 
   defp recursive_match(:object, json, prefix) do
@@ -114,27 +117,35 @@ defmodule TDLib.Handler do
     struct = match(:object, json, prefix)
 
     # Look for maps at depth n+1
-    nested_maps = :maps.filter(fn(_, v) -> is_map(v) end, struct)
+    nested_maps = :maps.filter(fn _, v -> is_map(v) end, struct)
 
     # Math depth n+1
-    nested_structs = :maps.map(fn(_k, v) -> recursive_match(:object, v, prefix) end, nested_maps)
+    nested_structs = :maps.map(fn _k, v -> recursive_match(:object, v, prefix) end, nested_maps)
 
     # Merge
     Map.merge(struct, nested_structs)
   end
 
   defp match(:object, json, prefix) do
-    {char, rest} = json |> Map.get("@type")
-                        |> String.Casing.titlecase_once(:default)
-    string = prefix <> char <> rest
+    type =
+      json
+      |> Map.get("@type")
+      |> TDLib.titlecase_once()
+
+    string = prefix <> type
     module = String.to_existing_atom(string)
 
     struct = struct(module)
-    Enum.reduce Map.to_list(struct), struct, fn {k, _}, acc ->
+
+    Enum.reduce(Map.to_list(struct), struct, fn {k, _}, acc ->
       case Map.fetch(json, Atom.to_string(k)) do
         {:ok, v} -> %{acc | k => v}
         :error -> acc
       end
-    end
+    end)
+  end
+
+  defp disable_handling do
+    Application.get_env(:telegram_tdlib, :disable_handling)
   end
 end

@@ -1,12 +1,12 @@
 defmodule TDLib.Session do
-  alias TDLib.Session
-  alias TDLib.SessionRegistry, as: Registry
-  use Supervisor
-
   @moduledoc false
 
-  defstruct [:name, :config, :supervisor_pid, :backend_pid, :handler_pid,
-             :client_pid, :encryption_key]
+  use Supervisor
+
+  alias TDLib.Session
+  alias TDLib.Session.Registry
+
+  defstruct [:name, :config, :supervisor_pid, :backend_pid, :handler_pid, :client_pid, :encryption_key]
 
   def start_link(name) do
     Supervisor.start_link(__MODULE__, name, [])
@@ -16,8 +16,8 @@ defmodule TDLib.Session do
     Registry.update(name, supervisor_pid: self())
 
     children = [
-      worker(TDLib.Backend, [name], restart: :permanent),
-      worker(TDLib.Handler, [name], restart: :permanent)
+      {TDLib.Backend, name},
+      {TDLib.Handler, name}
     ]
 
     opts = [strategy: :one_for_one]
@@ -31,6 +31,7 @@ defmodule TDLib.Session do
       client_pid: client,
       encryption_key: encryption_key
     }
+
     Registry.set(name, state)
 
     # Try to start the session
@@ -43,7 +44,7 @@ defmodule TDLib.Session do
   end
 
   def destroy(name) do
-    session = Registry.get name
+    session = Registry.get(name)
     Supervisor.stop(session.supervisor_pid, :normal)
     Registry.drop(name)
   end
