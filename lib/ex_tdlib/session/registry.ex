@@ -1,9 +1,9 @@
-defmodule TDLib.Session.Registry do
+defmodule ExTDLib.Session.Registry do
   @moduledoc false
 
   use GenServer
 
-  alias TDLib.Session
+  alias ExTDLib.Session
 
   @name __MODULE__
 

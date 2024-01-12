@@ -16,15 +16,7 @@ clean:
 
 build:
 	mkdir -p $(BUILD_ROOT)
-
-ifeq ($(shell uname),Darwin)
 	cd $(BUILD_ROOT); \
 	cmake -DCMAKE_BUILD_TYPE=Release \
     $(TDLIBJSONCLI_SRC) ; \
 	make -j$(JOBS) VERBOSE=$(VERBOSE)
-else
-	cd $(BUILD_ROOT); \
-	cmake -DCMAKE_BUILD_TYPE=Release \
-	  $(TDLIBJSONCLI_SRC) ; \
-	make -j$(JOBS) VERBOSE=$(VERBOSE)
-endif

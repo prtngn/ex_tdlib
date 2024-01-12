@@ -1,4 +1,4 @@
-defmodule TDLib.Object do
+defmodule ExTDLib.Object do
   @moduledoc """
   This module was generated using Telegram's TDLib documentation. It contains
   1478 submodules (=  structs).

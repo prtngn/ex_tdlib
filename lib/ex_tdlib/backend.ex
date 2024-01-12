@@ -1,13 +1,13 @@
-defmodule TDLib.Backend do
+defmodule ExTDLib.Backend do
   @moduledoc false
   use GenServer
 
-  alias TDLib.Backend
-  alias TDLib.Session.Registry
+  alias ExTDLib.Backend
+  alias ExTDLib.Session.Registry
 
   require Logger
 
-  @binary TDLib.get_backend_binary()
+  @binary ExTDLib.get_backend_binary()
   @port_opts [:binary, :line]
 
   # Internal state
@@ -56,7 +56,7 @@ defmodule TDLib.Backend do
 
         if handler_pid != nil do
           # Forward msg to the client
-          Kernel.send(handler_pid, {:tdlib, msg})
+          Kernel.send(handler_pid, {:ex_tdlib, msg})
         else
           Logger.warning("#{state.name}: incoming message but no handler registered.")
         end

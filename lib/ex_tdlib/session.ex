@@ -1,10 +1,10 @@
-defmodule TDLib.Session do
+defmodule ExTDLib.Session do
   @moduledoc false
 
   use Supervisor
 
-  alias TDLib.Session
-  alias TDLib.Session.Registry
+  alias ExTDLib.Session
+  alias ExTDLib.Session.Registry
 
   defstruct [:name, :config, :supervisor_pid, :backend_pid, :handler_pid, :client_pid, :encryption_key]
 
@@ -16,8 +16,8 @@ defmodule TDLib.Session do
     Registry.update(name, supervisor_pid: self())
 
     children = [
-      {TDLib.Backend, name},
-      {TDLib.Handler, name}
+      {ExTDLib.Backend, name},
+      {ExTDLib.Handler, name}
     ]
 
     opts = [strategy: :one_for_one]

@@ -1,9 +1,9 @@
-defmodule TDLib.Handler do
+defmodule ExTDLib.Handler do
   @moduledoc false
   use GenServer
 
-  alias TDLib.Object
-  alias TDLib.Session.Registry
+  alias ExTDLib.Object
+  alias ExTDLib.Session.Registry
 
   require Logger
 
@@ -22,8 +22,8 @@ defmodule TDLib.Handler do
     {:ok, session}
   end
 
-  def handle_info({:tdlib, msg}, session) do
-    json = Poison.decode!(msg)
+  def handle_info({:ex_tdlib, msg}, session) do
+    json = Jason.decode!(msg)
     keys = Map.keys(json)
 
     cond do
@@ -51,52 +51,56 @@ defmodule TDLib.Handler do
 
   def handle_object(json, session) do
     type = Map.get(json, "@type")
+    Logger.debug("#{session}: received object #{type}")
 
-    struct =
-      try do
-        recursive_match(:object, json, "Elixir.TDLib.Object.")
-      rescue
-        _ -> nil
-      end
+    try do
+      struct = recursive_match(:object, json, "Elixir.ExTDLib.Object.")
+      do_handle_object(session, type, struct, disable_handling())
+    rescue
+      _ -> Logger.info("No matching object found: #{inspect(type)}")
+    end
+  end
 
-    if struct do
-      Logger.debug("#{session}: received object #{type}")
+  defp do_handle_object(session, _, struct, true), do: forward_to_client(session, struct)
 
-      unless disable_handling() do
-        case struct do
-          %Object.Error{code: code, message: message} ->
-            Logger.error("#{session}: error #{code} - #{message}")
+  defp do_handle_object(session, _, struct, _) do
+    case struct do
+      %Object.Error{code: code, message: message} ->
+        Logger.error("#{session}: error #{code} - #{message}")
 
-          %Object.UpdateAuthorizationState{} ->
-            case struct.authorization_state do
-              %Object.AuthorizationStateWaitTdlibParameters{} ->
-                config = session |> Registry.get() |> Map.get(:config)
-                transmit(session, config)
-
-              _ ->
-                :ignore
-            end
+      %Object.UpdateAuthorizationState{} ->
+        case struct.authorization_state do
+          %Object.AuthorizationStateWaitTdlibParameters{} ->
+            config = session |> Registry.get() |> Map.get(:config)
+            transmit(session, config)
 
           _ ->
             :ignore
         end
-      end
 
-      # Forward to client
-      client_pid = session |> Registry.get() |> Map.get(:client_pid)
-
-      if is_pid(client_pid) and Process.alive?(client_pid) do
-        Kernel.send(client_pid, {:recv, struct})
-      end
-    else
-      Logger.info("No matching object found: #{inspect(type)}")
+      _ ->
+        :ignore
     end
+
+    forward_to_client(session, struct)
   end
+
+  defp forward_to_client(session, struct) do
+    client_pid = session |> Registry.get() |> Map.get(:client_pid)
+    do_forward_to_client(client_pid, Process.alive?(client_pid), struct)
+  end
+
+  defp do_forward_to_client(_, false, _), do: nil
+  defp do_forward_to_client(client_pid, _, struct), do: Kernel.send(client_pid, {:recv, struct})
 
   ###
 
   defp transmit(session, map) do
-    msg = Poison.encode!(map)
+    msg =
+      map
+      |> Map.delete(:__struct__)
+      |> Jason.encode!()
+
     backend_pid = Registry.get(session, :backend_pid)
 
     Logger.debug("#{session}: sending #{Map.get(map, :"@type")}")
@@ -130,7 +134,7 @@ defmodule TDLib.Handler do
     type =
       json
       |> Map.get("@type")
-      |> TDLib.titlecase_once()
+      |> ExTDLib.titlecase_once()
 
     string = prefix <> type
     module = String.to_existing_atom(string)
@@ -146,6 +150,6 @@ defmodule TDLib.Handler do
   end
 
   defp disable_handling do
-    Application.get_env(:telegram_tdlib, :disable_handling)
+    Application.get_env(:ex_tdlib, :disable_handling)
   end
 end

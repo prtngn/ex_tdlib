@@ -1,12 +1,12 @@
-defmodule TDLibTest do
+defmodule ExTDLibTest do
   use ExUnit.Case
 
-  alias TDLib.Method
-  alias TDLib.Object
-  alias TDLib.Object.UpdateAuthorizationState
-  alias TDLib.Session.Registry
+  alias ExTDLib.Method
+  alias ExTDLib.Object
+  alias ExTDLib.Object.UpdateAuthorizationState
+  alias ExTDLib.Session.Registry
 
-  doctest TDLib
+  doctest ExTDLib
 
   @session :testsession
 
@@ -16,20 +16,20 @@ defmodule TDLibTest do
 
   test "Session management" do
     # Ensure the registry is empty
-    assert Enum.count(Registry.dump()) == 0
+    assert Registry.dump() == []
 
     # Open a new session
-    {:ok, _pid} = TDLib.open(@session, self(), TDLib.default_config())
+    {:ok, _pid} = ExTDLib.open(@session, self(), ExTDLib.default_config())
 
     assert wait_for_authstate() == "authorizationStateWaitTdlibParameters"
     assert Enum.count(Registry.dump()) == 1
     assert @session |> Registry.get() |> Map.get(:client_pid) == self()
 
     # Close the session
-    TDLib.close(@session)
+    ExTDLib.close(@session)
 
     # Ensure the registry is empty again
-    assert Enum.count(Registry.dump()) == 0
+    assert Registry.dump() == []
   end
 
   @tag :manual
@@ -41,12 +41,12 @@ defmodule TDLibTest do
 
     config =
       struct(
-        TDLib.default_config(),
+        ExTDLib.default_config(),
         %{api_id: api_id, api_hash: api_hash}
       )
 
     # Open a new session
-    {:ok, _pid} = TDLib.open(@session, self(), config)
+    {:ok, _pid} = ExTDLib.open(@session, self(), config)
 
     assert wait_for_authstate() == "authorizationStateWaitTdlibParameters"
 
@@ -64,19 +64,19 @@ defmodule TDLibTest do
           }
         }
 
-        TDLib.transmit(@session, query)
+        ExTDLib.transmit(@session, query)
 
         assert wait_for_authstate() == "authorizationStateWaitCode"
 
         code = "Please authentication code: " |> IO.gets() |> String.trim()
         query = %Method.CheckAuthenticationCode{code: code}
-        TDLib.transmit(@session, query)
+        ExTDLib.transmit(@session, query)
 
         # If you account is protected with 2FA, you will be asked for a password
         # assert wait_for_authstate() == "authorizationStateWaitPassword"
         # password = "Please password: " |> IO.gets() |> String.trim()
         # query = %Method.CheckAuthenticationPassword{password: password}
-        # TDLib.transmit(@session, query)
+        # ExTDLib.transmit(@session, query)
 
         assert wait_for_authstate() == "authorizationStateReady"
 
@@ -87,7 +87,7 @@ defmodule TDLibTest do
     end
 
     # Close
-    TDLib.close(@session)
+    ExTDLib.close(@session)
   end
 
   ###

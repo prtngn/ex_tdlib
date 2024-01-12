@@ -1,14 +1,14 @@
-defmodule TDLib.Application do
+defmodule ExTDLib.Application do
   @moduledoc false
 
   use Application
 
   def start(_type, _args) do
     children = [
-      {TDLib.Session.Registry, []}
+      {ExTDLib.Session.Registry, []}
     ]
 
-    opts = [strategy: :one_for_one, name: TDLib.Supervisor]
+    opts = [strategy: :one_for_one, name: ExTDLib.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end

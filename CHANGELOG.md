@@ -1,10 +1,12 @@
-# Changelog for elixir-tdlib
+# Changelog for ex_tdlib
 
-## v0.0.4 (2023-12-XX)
+## v0.0.4 (2024-01-12)
 
 * tdlib-json-cli from nightly repo is now used
 * update dependencies
 * remove warnings
+* rename project to `ex_tdlib`
+* change poison to jason
 
 ## v0.0.3 (2019-09-13)
 

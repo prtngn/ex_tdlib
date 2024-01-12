@@ -2,12 +2,12 @@ defmodule Mix.Tasks.GenerateTypes do
   @moduledoc false
   use Mix.Task
 
-  @object_module "lib/tdlib/object.ex"
-  @method_module "lib/tdlib/method.ex"
+  @object_module "lib/ex_tdlib/object.ex"
+  @method_module "lib/ex_tdlib/method.ex"
   @json_source Path.join(Mix.Project.deps_paths().tdlib_json_cli, "types.json")
 
   defp extract(text) do
-    json = Poison.decode!(text)
+    json = Jason.decode!(text)
     keys = Map.keys(json)
     type_filter = fn k, t -> json |> Map.get(k) |> Map.get("type") == t end
 
@@ -100,7 +100,7 @@ defmodule Mix.Tasks.GenerateTypes do
 
     # Write header
     IO.write(fd, """
-    defmodule TDLib.Object do
+    defmodule ExTDLib.Object do
       @moduledoc \"""
       This module was generated using Telegram's TDLib documentation. It contains
       #{Enum.count(objects)} submodules (=  structs).
@@ -123,7 +123,7 @@ defmodule Mix.Tasks.GenerateTypes do
 
     # Write header
     IO.write(fd, """
-    defmodule TDLib.Method do
+    defmodule ExTDLib.Method do
       @moduledoc \"""
       This module was generated using Telegram's TDLib documentation. It contains
       #{Enum.count(methods)} submodules (= structs).
@@ -140,7 +140,7 @@ defmodule Mix.Tasks.GenerateTypes do
     IO.write(fd, "end")
   end
 
-  defp build_module_name(string), do: TDLib.titlecase_once(string)
+  defp build_module_name(string), do: ExTDLib.titlecase_once(string)
 
   def run(_) do
     IO.puts("Importing #{@json_source}...")
