@@ -9,9 +9,9 @@ Telegram as a full-fledged client (not as a bot!). It ships :
 * [oott123's tdlib-json-cli](https://github.com/oott123), licensed under the
   GNU Affero General Public License v3.0 (AGPL-3.0)
 
-Most of the interactions with this project are done via the `TDLib` module. Any
-structure used to interact with TDLib is defined under either `TDLib.Object` or
-`TDLib.Method`. You can create as many session as you want, but note that each
+Most of the interactions with this project are done via the `ExTDLib` module. Any
+structure used to interact with TDLib is defined under either `ExTDLib.Object` or
+`ExTDLib.Method`. You can create as many session as you want, but note that each
 of them launch a new instance of tdlib-json-cli via a
 [port](https://hexdocs.pm/elixir/Port.html).
 
@@ -21,19 +21,17 @@ Add the following to your `mix.exs` :
 
 ```elixir
 def deps do
-  [{:tdlib, "~> 0.0.2"}]
+  [{:ex_tdlib, "~> 0.0.4"}]
 end
 ```
 
-Note that compiling this project will compile Telegram's TDLib (C++) itself,
-it's going to take a while and depends on the following :
+#### MacOS users:
+Run `mix deps.get` and after go to `deps/tdlib_json_cli` and fix `CMakeLists.txt`.
+Remove `set(CMAKE_EXE_LINKER_FLAGS " -static")` and `target_link_libraries` set to `tdlib_json_cli Td::TdJsonStatic`
 
- * C++14 compatible compiler (clang 3.4+, GCC 4.9+, MSVC 19.0+ (Visual Studio
-   2015+), Intel C++ Compiler 17+)
- * OpenSSL
- * zlib
- * gperf
- * CMake (3.0.2+)
+Note that compiling this project will compile Telegram's TDLib (C++) itself,
+it's going to take a while and needs some depends. You can get more info here: [tdlib-json-cli repo](https://github.com/oott123/tdlib-json-cli)
+
 
 # Configuration
 
@@ -43,14 +41,14 @@ available :
 ```elixir
 # Disable automatic handling of authentification and directly forward the
 # incoming messages to the client
-config :telegram_tdlib, disable_handling: false
+config :ex_tdlib, disable_handling: false
 
 # Override default path of the telegram-json-cli binary
-config :telegram_tdlib, backend_binary: "/path/to/my/binary"
+config :ex_tdlib, backend_binary: "/path/to/my/binary"
 ```
 
 # Usage / Example
 
 A simple example can be found at
-[git.sr.ht/~fnux/elixir-tdlib-demo](https://git.sr.ht/~fnux/elixir-tdlib-demo).
-Please refer to the `TDLib` module for proper documentation.
+[https://github.com/prtngn/ex_telegram](https://github.com/prtngn/ex_telegram).
+Please refer to the `ExTDLib` module for proper documentation.

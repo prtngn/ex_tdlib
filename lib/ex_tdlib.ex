@@ -1,34 +1,36 @@
-defmodule TDLib do
-  alias TDLib.{Session, Object}
-  alias TDLib.SessionRegistry, as: Registry
-
-  @default_config %Object.TdlibParameters{
-    :use_test_dc              => false,
-    :database_directory       => "/tmp/tdlib",
-    :files_directory          => "", # When empty database_directory will be used
-    :use_file_database        => true,
-    :use_chat_info_database   => true,
-    :use_message_database     => true,
-    :use_secret_chats         => false,
-    :api_id                   => "0",
-    :api_hash                 => "0",
-    :system_language_code     => "en",
-    :device_model             => "Unknown",
-    :system_version           => "Unknown",
-    :application_version      => "Unknown",
-    :enable_storage_optimizer => true,
-    :ignore_file_names        => true
-  }
-
+defmodule ExTDLib do
   @moduledoc """
   This module allow you to interact with and manage sessions.
   """
+
+  alias ExTDLib.Method
+  alias ExTDLib.Session
+  alias ExTDLib.Session.Registry
+
+  @default_config %Method.SetTdlibParameters{
+    database_encryption_key: nil,
+    use_test_dc: false,
+    database_directory: "/tmp/tdlib",
+    files_directory: "",
+    use_file_database: true,
+    use_chat_info_database: true,
+    use_message_database: true,
+    use_secret_chats: false,
+    api_id: "0",
+    api_hash: "0",
+    system_language_code: "en",
+    device_model: "Unknown",
+    system_version: "Unknown",
+    application_version: "Unknown",
+    enable_storage_optimizer: true,
+    ignore_file_names: true
+  }
 
   @doc """
   Configuration template for TDLib, to be modified and used as parameter of
   `open/3`.
 
-  See `TDLib.Object.TdlibParameters` and
+  See `ExTDLib.Object.TdlibParameters` and
   [core.telegram.org/tdlib/options](https://core.telegram.org/tdlib/options)
   for details. You can obtain an `:api_id` and an `:api_hash` on
   [my.telegram.org](https://my.telegram.org/) : they are required by TDLib,
@@ -37,7 +39,7 @@ defmodule TDLib do
   Be careful not to use the same `:database_directory` for two different
   sessions !
   """
-  def default_config(), do: @default_config
+  def default_config, do: @default_config
 
   @doc """
   Open a new session. Spawns a new instance of `tdlib-json-cli`.
@@ -68,19 +70,24 @@ defmodule TDLib do
   The parameter `msg` must be a struct (any map in reality) since it is
   directly encoded into JSON and transmitted via TDLib. You should use the
   structures generated from TDLib's documentation and provided by the
-  submodules of `TDLib.Object` and `TDLib.Methods`.
+  submodules of `ExTDLib.Object` and `ExTDLib.Methods`.
 
   Alternatively it is also possible to directly provide an already encoded
   binary or string, althrough you should not need it.
   """
   def transmit(session_name, msg) when is_map(msg) do
-    json = Poison.encode!(msg)
+    json =
+      msg
+      |> Map.delete(:__struct__)
+      |> Map.new(fn {k, v} -> {k, transform_struct(v)} end)
+      |> Jason.encode!()
+
     transmit(session_name, json)
   end
 
   def transmit(session_name, json) when is_binary(json) do
     backend_pid = Registry.get(session_name, :backend_pid)
-    GenServer.call backend_pid, {:transmit, json}
+    GenServer.call(backend_pid, {:transmit, json})
   end
 
   @doc """
@@ -92,15 +99,32 @@ defmodule TDLib do
   """
   def update_client(session_name, client_pid) do
     handler_pid = Registry.get(session_name, :handler_pid)
-    GenServer.call handler_pid, {:set_client, client_pid}
+    GenServer.call(handler_pid, {:set_client, client_pid})
   end
 
   @doc false
-  def get_backend_binary() do
-    config = Application.get_env(:tdlib, :backend_binary)
+  def get_backend_binary do
+    config = Application.get_env(:ex_tdlib, :backend_binary)
+
     case config do
-      nil -> Mix.Project.build_path() |> Path.join("/lib/tdlib_json_cli/bin/tdlib_json_cli")
+      nil -> Path.join(Mix.Project.build_path(), "/lib/tdlib_json_cli/bin/tdlib_json_cli")
       _ -> config
     end
   end
+
+  @doc """
+  Converts the first letter of a string to uppercase, while leaving the rest of the string unchanged.
+  """
+  def titlecase_once(str) do
+    first_letter = String.first(str)
+    String.replace_prefix(str, first_letter, String.upcase(first_letter))
+  end
+
+  defp transform_struct(map) when is_map(map) do
+    map
+    |> Map.delete(:__struct__)
+    |> Map.new(fn {k, v} -> {k, transform_struct(v)} end)
+  end
+
+  defp transform_struct(value), do: value
 end

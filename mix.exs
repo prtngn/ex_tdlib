@@ -1,65 +1,62 @@
-defmodule TDLib.Mixfile do
+defmodule ExTDLib.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :tdlib,
-      version: "0.0.3",
-      elixir: "~> 1.5",
-      start_permanent: Mix.env == :prod,
-      compilers: [:elixir_make] ++ Mix.compilers,
+      app: :ex_tdlib,
+      compilers: [:elixir_make] ++ Mix.compilers(),
       deps: deps(),
-
-      # Hex
       description: description(),
+      docs: [main: "readme", extras: ["README.md"]],
+      dialyzer: [
+        plt_add_apps: ~w(jason mix)a
+      ],
+      elixir: "~> 1.15",
+      homepage_url: "https://github.com/prtngn/ex_tdlib",
+      name: "ExTDLib",
       package: package(),
-
-      # Docs
-      name: "TDLib",
-      source_url: "https://git.sr.ht/~fnux/elixir-tdlib",
-      homepage_url: "https://git.sr.ht/~fnux/elixir-tdlib",
-      docs: [main: "readme", extras: ["README.md"]]
+      source_url: "https://github.com/prtngn/ex_tdlib",
+      start_permanent: Mix.env() == :prod,
+      version: "0.0.4"
     ]
   end
 
-  defp description() do
+  defp description do
     "Bindings over Telegram's TDLib, allowing to act as a full-fledged Telegram client."
   end
 
-  defp package() do
+  defp package do
     [
-      files: ["lib/tdlib*", "Makefile", "mix.exs", "README*", "LICENSE*", "CHANGELOG.*"],
-      maintainers: ["Timothée Floure"],
+      name: "ex_tdlib",
+      files: ~w(lib Makefile .formatter.exs mix.exs README* LICENSE* CHANGELOG.*),
+      maintainers: ["Timothée Floure", "Maxim Portnyagin"],
       licenses: ["AGPL-3.0"],
       links: %{
-        "Sources (git.sr.ht)" => "https://git.sr.ht/~fnux/elixir-tdlib",
-        "Bug Tracker (todo.sr.ht)" => "https://todo.sr.ht/~fnux/elixir-tdlib",
+        "Sources" => "https://github.com/prtngn/ex_tdlib",
+        "Bug Tracker" => "https://github.com/prtngn/ex_tdlib",
         "Telegram TDLib" => "https://core.telegram.org/tdlib"
       }
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {TDLib.Application, []},
+      mod: {ExTDLib.Application, []},
       extra_applications: [:logger]
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:poison, "~> 3.1"},
+      {:credo, ">= 0.0.0", only: [:dev], runtime: false},
+      {:dialyxir, ">= 0.0.0", only: [:dev], runtime: false},
       {:elixir_make, "~> 0.4", runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.31", only: :dev, runtime: false},
+      {:jason, "~> 1.4"},
+      {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
+      {:styler, "~> 0.10", only: [:dev, :test], runtime: false},
       {:tdlib_json_cli,
-        git: "https://github.com/oott123/tdlib-json-cli",
-        submodules: true,
-        tag: "v1.7.0",
-        app: false,
-        compile: false
-      }
+       git: "https://github.com/oott123/tdlib-json-cli", branch: "nightly", submodules: true, app: false, compile: false}
     ]
   end
 end

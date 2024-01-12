@@ -1,11 +1,13 @@
-defmodule TDLib.SessionRegistry do
-  alias TDLib.Session
+defmodule ExTDLib.Session.Registry do
+  @moduledoc false
+
   use GenServer
 
-  @moduledoc false
+  alias ExTDLib.Session
+
   @name __MODULE__
 
-  def start_link() do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
   end
 
@@ -25,10 +27,11 @@ defmodule TDLib.SessionRegistry do
   def handle_call({:get, key}, _from, table) do
     lookup = :ets.lookup(table, key)
 
-    reply = case lookup do
-      [{_key, value}] -> value
-      [] -> nil
-    end
+    reply =
+      case lookup do
+        [{_key, value}] -> value
+        [] -> nil
+      end
 
     {:reply, reply, table}
   end
@@ -46,16 +49,16 @@ defmodule TDLib.SessionRegistry do
 
   ###
 
-  def set(session_name, %Session{}=struct) do
+  def set(session_name, %Session{} = struct) do
     if get(session_name) == nil do
-      GenServer.call @name, {:set, session_name, struct}
+      GenServer.call(@name, {:set, session_name, struct})
     else
       raise "key already registered"
     end
   end
 
   def get(session_name) do
-    GenServer.call @name, {:get, session_name}
+    GenServer.call(@name, {:get, session_name})
   end
 
   def get(session_name, field) do
@@ -64,16 +67,16 @@ defmodule TDLib.SessionRegistry do
   end
 
   def update(session_name, change) do
-    struct = GenServer.call @name, {:get, session_name}
+    struct = GenServer.call(@name, {:get, session_name})
     new_struct = struct(struct, change)
-    GenServer.call @name, {:set, session_name, new_struct}
+    GenServer.call(@name, {:set, session_name, new_struct})
   end
 
   def drop(session_name) do
-    GenServer.call @name, {:drop, session_name}
+    GenServer.call(@name, {:drop, session_name})
   end
 
-  def dump() do
-    GenServer.call @name, :dump
+  def dump do
+    GenServer.call(@name, :dump)
   end
 end

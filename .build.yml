@@ -8,16 +8,16 @@ packages:
   - cmake
   - tar
 sources:
-  - https://git.sr.ht/~fnux/elixir-tdlib
+  - https://github.com/prtngn/ex_tdlib
 tasks:
 - build-deps: |
-    cd elixir-tdlib
+    cd ex_tdlib
     mix local.hex --force
     mix deps.get
     mix deps.compile
 - build: |
-    cd elixir-tdlib
+    cd ex_tdlib
     mix compile
 - test: |
-    cd elixir-tdlib
+    cd ex_tdlib
     mix test
