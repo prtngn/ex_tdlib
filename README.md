@@ -21,7 +21,7 @@ Add the following to your `mix.exs` :
 
 ```elixir
 def deps do
-  [{:ex_tdlib, "~> 0.0.4"}]
+  [{:ex_tdlib, git: "https://github.com/prtngn/ex_tdlib.git"}]
 end
 ```
 
