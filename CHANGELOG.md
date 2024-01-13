@@ -2,11 +2,12 @@
 
 ## v0.0.4 (2024-01-12)
 
-* tdlib-json-cli from nightly repo is now used
-* update dependencies
+* remove tdlib-json-cli from deps
+* update deps
 * remove warnings
 * rename project to `ex_tdlib`
 * change poison to jason
+* add types.json for generating types
 
 ## v0.0.3 (2019-09-13)
 

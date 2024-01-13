@@ -4,7 +4,7 @@ defmodule Mix.Tasks.GenerateTypes do
 
   @object_module "lib/ex_tdlib/object.ex"
   @method_module "lib/ex_tdlib/method.ex"
-  @json_source Path.join(Mix.Project.deps_paths().tdlib_json_cli, "types.json")
+  @json_source Path.join(Mix.Project.app_path(), "types.json")
 
   defp extract(text) do
     json = Jason.decode!(text)

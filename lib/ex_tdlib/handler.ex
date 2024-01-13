@@ -54,16 +54,17 @@ defmodule ExTDLib.Handler do
     Logger.debug("#{session}: received object #{type}")
 
     try do
-      struct = recursive_match(:object, json, "Elixir.ExTDLib.Object.")
-      do_handle_object(session, type, struct, disable_handling())
+      json
+      |> recursive_match("Elixir.ExTDLib.Object.")
+      |> do_handle_object(session, type, disable_handling())
     rescue
       _ -> Logger.info("No matching object found: #{inspect(type)}")
     end
   end
 
-  defp do_handle_object(session, _, struct, true), do: forward_to_client(session, struct)
+  defp do_handle_object(struct, session, _, true), do: forward_to_client(session, struct)
 
-  defp do_handle_object(session, _, struct, _) do
+  defp do_handle_object(struct, session, _, _) do
     case struct do
       %Object.Error{code: code, message: message} ->
         Logger.error("#{session}: error #{code} - #{message}")
@@ -116,7 +117,7 @@ defmodule ExTDLib.Handler do
     Logger.debug("#{session}: backend verbosity set to #{level}.")
   end
 
-  defp recursive_match(:object, json, prefix) do
+  defp recursive_match(json, prefix) do
     # Match depth 1
     struct = match(:object, json, prefix)
 
@@ -124,7 +125,7 @@ defmodule ExTDLib.Handler do
     nested_maps = :maps.filter(fn _, v -> is_map(v) end, struct)
 
     # Math depth n+1
-    nested_structs = :maps.map(fn _k, v -> recursive_match(:object, v, prefix) end, nested_maps)
+    nested_structs = :maps.map(fn _k, v -> recursive_match(v, prefix) end, nested_maps)
 
     # Merge
     Map.merge(struct, nested_structs)
