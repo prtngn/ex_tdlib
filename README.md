@@ -21,13 +21,16 @@ Add the following to your `mix.exs` :
 
 ```elixir
 def deps do
-  [{:ex_tdlib, git: "https://github.com/prtngn/ex_tdlib.git"}]
+  [
+    {:ex_tdlib, "~> 0.0.4"},
+    {:tdlib_json_cli, git: "https://github.com/oott123/tdlib-json-cli", branch: "nightly", submodules: true, app: false, compile: false}
+  ]
 end
 ```
 
 #### MacOS users:
 Run `mix deps.get` and after go to `deps/tdlib_json_cli` and fix `CMakeLists.txt`.
-Remove `set(CMAKE_EXE_LINKER_FLAGS " -static")` and `target_link_libraries` set to `tdlib_json_cli Td::TdJsonStatic`
+Remove `set(CMAKE_EXE_LINKER_FLAGS " -static")` and set `target_link_libraries(tdlib_json_cli Td::TdJsonStatic)`
 
 Note that compiling this project will compile Telegram's TDLib (C++) itself,
 it's going to take a while and needs some depends. You can get more info here: [tdlib-json-cli repo](https://github.com/oott123/tdlib-json-cli)

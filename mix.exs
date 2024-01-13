@@ -54,9 +54,7 @@ defmodule ExTDLib.Mixfile do
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:jason, "~> 1.4"},
       {:mix_audit, ">= 0.0.0", only: [:dev], runtime: false},
-      {:styler, "~> 0.10", only: [:dev, :test], runtime: false},
-      {:tdlib_json_cli,
-       git: "https://github.com/oott123/tdlib-json-cli", branch: "nightly", submodules: true, app: false, compile: false}
+      {:styler, "~> 0.10", only: [:dev, :test], runtime: false}
     ]
   end
 end
