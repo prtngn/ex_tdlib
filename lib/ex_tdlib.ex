@@ -3,11 +3,12 @@ defmodule ExTDLib do
   This module allow you to interact with and manage sessions.
   """
 
+  alias ExTDLib.Adapter.Tdjson
   alias ExTDLib.Method
   alias ExTDLib.Session
   alias ExTDLib.Session.Registry
 
-  @default_config %Method.SetTdlibParameters{
+  @default_config %Method.Set.TdlibParameters{
     database_encryption_key: nil,
     use_test_dc: false,
     database_directory: "/tmp/tdlib",
@@ -21,9 +22,7 @@ defmodule ExTDLib do
     system_language_code: "en",
     device_model: "Unknown",
     system_version: "Unknown",
-    application_version: "Unknown",
-    enable_storage_optimizer: true,
-    ignore_file_names: true
+    application_version: "Unknown"
   }
 
   @doc """
@@ -54,7 +53,17 @@ defmodule ExTDLib do
   Return either `{:ok, pid}` or `{:error, reason}`.
   """
   def open(session_name, client_pid, config, encryption_key \\ "") do
-    Session.create(session_name, client_pid, config, encryption_key)
+    env_adapter = System.get_env("TDLIB_ADAPTER")
+
+    adapter =
+      case env_adapter do
+        "nif" -> ExTDLib.Adapter.Nif
+        "cli" -> Tdjson
+        "json" -> Tdjson
+        _ -> Tdjson
+      end
+
+    Session.create(session_name, client_pid, config, encryption_key, adapter: adapter)
   end
 
   @doc """
@@ -102,13 +111,28 @@ defmodule ExTDLib do
     GenServer.call(handler_pid, {:set_client, client_pid})
   end
 
-  @doc false
-  def get_backend_binary do
-    config = Application.get_env(:ex_tdlib, :backend_binary)
+  @doc """
+  Returns the path to the `tdlib-json-cli` binary.
 
-    case config do
-      nil -> Path.join(Mix.Project.build_path(), "/lib/tdlib_json_cli/bin/tdlib_json_cli")
-      _ -> config
+  The path can be configured via:
+  1. Environment variable `TDLIB_JSON_CLI_PATH`
+  2. Application config `:ex_tdlib, :backend_binary`
+
+  Raises an error if not configured.
+  """
+  def get_backend_binary do
+    env_path = System.get_env("TDLIB_JSON_CLI_PATH")
+    config_path = Application.get_env(:ex_tdlib, :backend_binary)
+
+    cond do
+      env_path != nil ->
+        env_path
+
+      config_path != nil ->
+        config_path
+
+      true ->
+        raise "tdlib-json-cli path not configured. Set TDLIB_JSON_CLI_PATH env or :ex_tdlib, :backend_binary config."
     end
   end
 

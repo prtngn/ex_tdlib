@@ -22,3 +22,5 @@ erl_crash.dump
 # tdlib-json-cli binary
 priv/tdlib-json-cli
 priv/types.json
+.elixir_ls
+mise.toml

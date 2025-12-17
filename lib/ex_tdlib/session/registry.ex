@@ -67,9 +67,14 @@ defmodule ExTDLib.Session.Registry do
   end
 
   def update(session_name, change) do
-    struct = GenServer.call(@name, {:get, session_name})
-    new_struct = struct(struct, change)
-    GenServer.call(@name, {:set, session_name, new_struct})
+    case GenServer.call(@name, {:get, session_name}) do
+      nil ->
+        raise "session not found"
+
+      struct ->
+        new_struct = struct(struct, change)
+        GenServer.call(@name, {:set, session_name, new_struct})
+    end
   end
 
   def drop(session_name) do

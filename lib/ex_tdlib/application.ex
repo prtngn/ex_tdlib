@@ -5,7 +5,8 @@ defmodule ExTDLib.Application do
 
   def start(_type, _args) do
     children = [
-      {ExTDLib.Session.Registry, []}
+      {ExTDLib.Session.Registry, []},
+      {ExTDLib.Session.Supervisor, []}
     ]
 
     opts = [strategy: :one_for_one, name: ExTDLib.Supervisor]

@@ -3,10 +3,11 @@ defmodule ExTDLib.Session do
 
   use Supervisor
 
+  alias ExTDLib.Adapter.Tdjson
   alias ExTDLib.Session
   alias ExTDLib.Session.Registry
 
-  defstruct [:name, :config, :supervisor_pid, :backend_pid, :handler_pid, :client_pid, :encryption_key]
+  defstruct [:name, :config, :supervisor_pid, :backend_pid, :handler_pid, :client_pid, :encryption_key, :adapter]
 
   def start_link(name) do
     Supervisor.start_link(__MODULE__, name, [])
@@ -15,8 +16,11 @@ defmodule ExTDLib.Session do
   def init(name) do
     Registry.update(name, supervisor_pid: self())
 
+    session = Registry.get(name)
+    adapter = session.adapter || Tdjson
+
     children = [
-      {ExTDLib.Backend, name},
+      {adapter, name},
       {ExTDLib.Handler, name}
     ]
 
@@ -24,21 +28,24 @@ defmodule ExTDLib.Session do
     Supervisor.init(children, opts)
   end
 
-  def create(name, client, config, encryption_key) do
+  def create(name, client, config, encryption_key, opts \\ []) do
+    adapter = Keyword.get(opts, :adapter, Tdjson)
+
     # Initialize the new session in the registry
     state = %Session{
       config: config,
       client_pid: client,
-      encryption_key: encryption_key
+      encryption_key: encryption_key,
+      adapter: adapter
     }
 
     Registry.set(name, state)
 
-    # Try to start the session
-    {status, output} = start_link(name)
+    # Try to start the session via the DynamicSupervisor
+    {status, output} = ExTDLib.Session.Supervisor.start_child({Session, name})
 
     # Remove from registry if the creation failed
-    unless status == :ok, do: Registry.drop(name)
+    if status != :ok, do: Registry.drop(name)
 
     {status, output}
   end
