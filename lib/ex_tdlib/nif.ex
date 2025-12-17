@@ -12,15 +12,9 @@ defmodule ExTDLib.Nif do
     :erlang.nif_error(:nif_not_loaded)
   end
 
-  def client_send(_client, _request) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
+  def client_send(_client, _query), do: :erlang.nif_error(:nif_not_loaded)
 
-  def client_receive(_client, _timeout) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
+  def client_receive(_client, _timeout), do: :erlang.nif_error(:nif_not_loaded)
 
-  def client_execute(_client, _request) do
-    :erlang.nif_error(:nif_not_loaded)
-  end
+  def client_execute(_client, _query), do: :erlang.nif_error(:nif_not_loaded)
 end

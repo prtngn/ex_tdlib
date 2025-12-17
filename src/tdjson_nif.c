@@ -90,9 +90,14 @@ static ERL_NIF_TERM nif_client_receive(ErlNifEnv *env, int argc,
 
 static ERL_NIF_TERM nif_client_execute(ErlNifEnv *env, int argc,
                                        const ERL_NIF_TERM argv[]) {
-  void **client_ptr;
-  if (!enif_get_resource(env, argv[0], CLIENT_RESOURCE, (void **)&client_ptr)) {
-    // execute can be static (client = NULL)
+  void *client = NULL;
+  void **client_ptr = &client;
+
+  if (!enif_is_identical(argv[0], enif_make_atom(env, "nil"))) {
+    if (!enif_get_resource(env, argv[0], CLIENT_RESOURCE,
+                           (void **)&client_ptr)) {
+      return enif_make_badarg(env);
+    }
   }
 
   ErlNifBinary bin;

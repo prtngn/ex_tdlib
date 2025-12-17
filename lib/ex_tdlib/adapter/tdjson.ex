@@ -44,6 +44,12 @@ defmodule ExTDLib.Adapter.Tdjson do
       port: Port.open({:spawn_executable, binary}, @port_opts)
     }
 
+    # Configure logging
+    Enum.each(ExTDLib.get_log_requests(), fn req ->
+      data = Jason.encode!(req) <> "\n"
+      Kernel.send(state.port, {self(), {:command, data}})
+    end)
+
     {:ok, state}
   end
 

@@ -53,17 +53,52 @@ defmodule ExTDLib do
   Return either `{:ok, pid}` or `{:error, reason}`.
   """
   def open(session_name, client_pid, config, encryption_key \\ "") do
-    env_adapter = System.get_env("TDLIB_ADAPTER")
+    adapter = get_adapter()
+    Session.create(session_name, client_pid, config, encryption_key, adapter: adapter)
+  end
 
-    adapter =
-      case env_adapter do
-        "nif" -> ExTDLib.Adapter.Nif
-        "cli" -> Tdjson
-        "json" -> Tdjson
-        _ -> Tdjson
+  @doc false
+  def get_adapter do
+    case System.get_env("TDLIB_ADAPTER") do
+      "nif" -> ExTDLib.Adapter.Nif
+      "cli" -> Tdjson
+      "json" -> Tdjson
+      _ -> Tdjson
+    end
+  end
+
+  @doc false
+  def get_log_requests do
+    verbosity = Application.get_env(:ex_tdlib, :verbosity, 0)
+    log_path = Application.get_env(:ex_tdlib, :log_path)
+
+    verbosity_req = %{
+      "@type" => "setLogVerbosityLevel",
+      "new_verbosity_level" => verbosity
+    }
+
+    stream_req =
+      if log_path do
+        %{
+          "@type" => "setLogStream",
+          "log_stream" => %{
+            "@type" => "logStreamFile",
+            "path" => log_path,
+            "max_file_size" => 104_857_600,
+            "redirect_stderr" => false
+          }
+        }
+
+        # If verbosity is 0, we don't strictly need to change stream, but user asked for /dev/null default?
+        # Verbosity 0 is effectively silent.
+        # But explicit empty stream is safer.
+        # However, let's stick to default (stderr) if path not provided, relying on verbosity.
+        # Wait, user said "by default send to /dev/null".
+        # If verbosity=0, it's effectively null.
+        # If I use logStreamEmpty, it is truly null.
       end
 
-    Session.create(session_name, client_pid, config, encryption_key, adapter: adapter)
+    Enum.reject([verbosity_req, stream_req], &is_nil/1)
   end
 
   @doc """

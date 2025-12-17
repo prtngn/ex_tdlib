@@ -1,11 +1,6 @@
 defmodule ExTDLib.Mixfile do
   use Mix.Project
 
-  # Ensure the custom compiler is loaded
-  if File.exists?("lib/mix/tasks/compile.generate_td_types.ex") do
-    Code.require_file("lib/mix/tasks/compile.generate_td_types.ex")
-  end
-
   def project do
     [
       app: :ex_tdlib,
