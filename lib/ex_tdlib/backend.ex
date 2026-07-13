@@ -7,7 +7,6 @@ defmodule ExTDLib.Backend do
 
   require Logger
 
-  @binary ExTDLib.get_backend_binary()
   @port_opts [:binary, :line]
 
   # Internal state
@@ -25,7 +24,7 @@ defmodule ExTDLib.Backend do
     state = %Backend{
       name: name,
       buffer: "",
-      port: Port.open({:spawn_executable, @binary}, @port_opts)
+      port: Port.open({:spawn_executable, ExTDLib.get_backend_binary()}, @port_opts)
     }
 
     {:ok, state}
